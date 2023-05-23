@@ -12,6 +12,13 @@ namespace My_Revit_Commands
     [Regeneration(RegenerationOption.Manual)]
     public class Add_Floor : IExternalCommand
     {
+        private List<string> floorTypes = new List<string>()
+        {
+            "Type 1",
+            "Type 2",
+            "Type 3"
+        };
+
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             // Obtener la aplicación y el documento
@@ -20,24 +27,59 @@ namespace My_Revit_Commands
 
             try
             {
-                // Obtener los cuartos seleccionados por el usuario
-                IList<Reference> pickedRefs = uiApp.ActiveUIDocument.Selection.PickObjects(ObjectType.Element, new RoomPickFilter(), "Seleccione los cuartos");
+                // Solicitar al usuario que seleccione uno o varios cuartos
+                IList<Reference> pickedRefs = uiApp.ActiveUIDocument.Selection.PickObjects(ObjectType.Element, new RoomPickFilter(), "Seleccione uno o varios cuartos");
 
                 if (pickedRefs.Count > 0)
                 {
-                    using (Transaction transaction = new Transaction(doc, "Agregar Pisos"))
+                    using (TransactionGroup group = new TransactionGroup(doc, "Agregar Pisos"))
                     {
-                        transaction.Start();
+                        group.Start();
 
-                        foreach (Reference pickedRef in pickedRefs)
+                        TaskDialog taskDialog = new TaskDialog("Seleccionar tipo de piso");
+                        taskDialog.MainInstruction = "Seleccione un tipo de piso:";
+                        for (int i = 0; i < floorTypes.Count; i++)
                         {
-                            Room room = doc.GetElement(pickedRef) as Room;
-                            AddDefaultFloorToRoom(doc, room);
+                            taskDialog.AddCommandLink(TaskDialogCommandLinkId.CommandLink1 + i, floorTypes[i]);
+                        }
+                        TaskDialogResult result = taskDialog.Show();
+                        if (result == TaskDialogResult.CommandLink1)
+                        {
+                            string selectedType = floorTypes[0];
+                            foreach (Reference pickedRef in pickedRefs)
+                            {
+                                Room room = doc.GetElement(pickedRef) as Room;
+                                FloorType floorType = GetFloorType(selectedType, doc);
+                                if (floorType != null)
+                                    AddFloorToRoom(doc, room, floorType);
+                            }
+                        }
+                        else if (result == TaskDialogResult.CommandLink2)
+                        {
+                            string selectedType = floorTypes[1];
+                            foreach (Reference pickedRef in pickedRefs)
+                            {
+                                Room room = doc.GetElement(pickedRef) as Room;
+                                FloorType floorType = GetFloorType(selectedType, doc);
+                                if (floorType != null)
+                                    AddFloorToRoom(doc, room, floorType);
+                            }
+                        }
+                        else if (result == TaskDialogResult.CommandLink3)
+                        {
+                            string selectedType = floorTypes[2];
+                            foreach (Reference pickedRef in pickedRefs)
+                            {
+                                Room room = doc.GetElement(pickedRef) as Room;
+                                FloorType floorType = GetFloorType(selectedType, doc);
+                                if (floorType != null)
+                                    AddFloorToRoom(doc, room, floorType);
+                            }
                         }
 
-                        transaction.Commit();
+                        group.Assimilate();
 
-                        TaskDialog.Show("Éxito", "Se agregaron los pisos a los cuartos seleccionados.");
+                        TaskDialog.Show("Éxito", "Se han agregado los pisos a los cuartos seleccionados.");
                     }
                 }
                 else
@@ -54,7 +96,7 @@ namespace My_Revit_Commands
             return Result.Succeeded;
         }
 
-        public void AddDefaultFloorToRoom(Document doc, Room room)
+        public void AddFloorToRoom(Document doc, Room room, FloorType floorType)
         {
             // Obtener el nivel del cuarto
             Level level = doc.GetElement(room.LevelId) as Level;
@@ -75,7 +117,29 @@ namespace My_Revit_Commands
             }
 
             // Crear el suelo (floor)
-            doc.Create.NewFloor(curveArray, false);
+            using (Transaction transaction = new Transaction(doc, "Agregar Pisos"))
+            {
+                transaction.Start();
+
+                doc.Create.NewFloor(curveArray, false);
+                ElementId floorTypeId = floorType.Id;
+                doc.ActiveView.get_Parameter(BuiltInParameter.VIEW_PHASE).Set(floorTypeId);
+
+                transaction.Commit();
+            }
+        }
+
+        public FloorType GetFloorType(string floorTypeName, Document doc)
+        {
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
+            collector.OfClass(typeof(FloorType));
+
+            foreach (FloorType floorType in collector)
+            {
+                if (floorType.Name.Equals(floorTypeName, StringComparison.OrdinalIgnoreCase))
+                    return floorType;
+            }
+            return null;
         }
 
         public class RoomPickFilter : ISelectionFilter
