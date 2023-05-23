@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<RevitAddIns>
+  <AddIn Type="Command">
+    <Name>My_Revit_Commands</Name>
+    <Assembly>My_Revit_Commands.dll</Assembly><!--Al guardarlo junto con el dll no hay que llamar al path-->
+    <AddInId>
+      B7973950-B592-411A-91DA-A3AB2B9FA7F7
+    </AddInId>
+    <FullClassName>My_Revit_Commands.GetElementId</FullClassName>
+    <Text>GetElementId</Text>
+    <Description>Get the Id from an element</Description>
+    <VendorId>SmokeSeller</VendorId>
+    <VendorDescription>nicogarnero1@outlook.com</VendorDescription>
+    <VisibilityMode>NotVisibleWhenNoActiveDocument</VisibilityMode>
+  </AddIn>
+  <AddIn Type="Command">
+    <Name>My_Revit_Commands</Name>
+    <Assembly>My_Revit_Commands.dll</Assembly>
+    <!--Al guardarlo junto con el dll no hay que llamar al path-->
+    <AddInId>
+      2F21BE10-CD32-4D1A-A045-F8CAA5685402
+    </AddInId>
+    <FullClassName>My_Revit_Commands.Collect_Rooms</FullClassName>
+    <Text>Collect_Rooms</Text>
+    <Description>Collect rooms from a document</Description>
+    <VendorId>SmokeSeller</VendorId>
+    <VendorDescription>nicogarnero1@outlook.com</VendorDescription>
+    <VisibilityMode>NotVisibleWhenNoActiveDocument</VisibilityMode>
+  </AddIn>
+  <AddIn Type="Command">
+    <Name>RoomDuplicator</Name>
+    <Assembly>My_Revit_Commands.dll</Assembly>
+    <AddInId>B9D013B7-3BEC-47E2-A288-C9041FDC6CF5</AddInId>
+    <FullClassName>My_Revit_Commands.RoomDuplicator</FullClassName>
+    <Text>Duplicador de Habitaciones</Text>
+    <Description>Herramienta para duplicar habitaciones en Revit</Description>
+    <VendorId>SmokeSeller</VendorId>
+    <VendorDescription>nicogarnero1@outlook.com</VendorDescription>
+    <VisibilityMode>NotVisibleWhenNoActiveDocument</VisibilityMode>
+  </AddIn>
+  <AddIn Type="Command">
+    <Name>Add_Floor</Name>
+    <Assembly>My_Revit_Commands.dll</Assembly>
+    <AddInId>0169938E-AD88-4FE0-897E-799D2C8AE695</AddInId>
+    <FullClassName>My_Revit_Commands.Add_Floor</FullClassName>
+    <Text>Add_Floor</Text>
+    <Description>Herramienta para añadir floor a las habitaciones </Description>
+    <VendorId>SmokeSeller</VendorId>
+    <VendorDescription>nicogarnero1@outlook.com</VendorDescription>
+    <VisibilityMode>NotVisibleWhenNoActiveDocument</VisibilityMode>
+  </AddIn>
+<AddIn Type="Command">
+  <Name>Add_Ceiling</Name>
+  <Assembly>My_Revit_Commands.dll</Assembly>
+  <AddInId> FF542FA6-A9BE-4869-A868-BB251D7882C5</AddInId>
+  <FullClassName>My_Revit_Commands.Add_Ceiling</FullClassName>
+  <Text>Add_Ceiling</Text>
+  <Description>Herramienta para añadir ceiling a las habitaciones </Description>
+  <VendorId>SmokeSeller</VendorId>
+  <VendorDescription>nicogarnero1@outlook.com</VendorDescription>
+  <VisibilityMode>NotVisibleWhenNoActiveDocument</VisibilityMode>
+</AddIn>
+</RevitAddIns>
