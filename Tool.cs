@@ -43,7 +43,6 @@ namespace My_Revit_Commands
             toolFormButtonData.ToolTip = buttonDescription;
             PushButton toolFormButton = panel.AddItem(toolFormButtonData) as PushButton;
 
-            // Establecer el ícono del botón
             toolFormButton.LargeImage = new BitmapImage(new Uri(@"C:\Users\Usuario\Dropbox\My PC (DESKTOP-MVTIPMF)\Desktop\Nico\Programación\Revit\My_Revit_Commands\nina.png"));
 
 
@@ -52,7 +51,6 @@ namespace My_Revit_Commands
 
         public Result OnShutdown(UIControlledApplication application)
         {
-            // Lógica de cierre de la aplicación
 
             return Result.Succeeded;
         }

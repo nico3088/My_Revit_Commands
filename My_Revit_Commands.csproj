@@ -60,7 +60,6 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Add_Ceiling_Or_Floor.cs" />
     <Compile Include="Autodesk\Revit\UI\RevitCommand.cs" />
     <Compile Include="Collect_Rooms.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
