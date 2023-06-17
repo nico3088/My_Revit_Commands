@@ -2,6 +2,8 @@
 using Autodesk.Revit.DB;
 using Autodesk.Revit.Attributes;
 using System.Windows.Forms;
+using System.Windows.Media.Imaging;
+using System;
 
 namespace My_Revit_Commands
 {
@@ -41,11 +43,16 @@ namespace My_Revit_Commands
             toolFormButtonData.ToolTip = buttonDescription;
             PushButton toolFormButton = panel.AddItem(toolFormButtonData) as PushButton;
 
+            // Establecer el ícono del botón
+            toolFormButton.LargeImage = new BitmapImage(new Uri(@"C:\Users\Usuario\Dropbox\My PC (DESKTOP-MVTIPMF)\Desktop\Nico\Programación\Revit\My_Revit_Commands\nina.png"));
+
+
             return Result.Succeeded;
         }
 
         public Result OnShutdown(UIControlledApplication application)
         {
+            // Lógica de cierre de la aplicación
 
             return Result.Succeeded;
         }
