@@ -43,7 +43,7 @@ namespace My_Revit_Commands
             toolFormButtonData.ToolTip = buttonDescription;
             PushButton toolFormButton = panel.AddItem(toolFormButtonData) as PushButton;
 
-            toolFormButton.LargeImage = new BitmapImage(new Uri(@"C:\Users\Usuario\Dropbox\My PC (DESKTOP-MVTIPMF)\Desktop\Nico\Programación\Revit\My_Revit_Commands\nina.png"));
+            toolFormButton.LargeImage = new BitmapImage(new Uri(@"C:\Users\Usuario\Dropbox\My PC (DESKTOP-MVTIPMF)\Desktop\Nico\Programación\Revit\My_Revit_Commands\faviconsmart28.png"));
 
 
             return Result.Succeeded;
