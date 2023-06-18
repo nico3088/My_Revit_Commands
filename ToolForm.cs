@@ -17,46 +17,60 @@ namespace My_Revit_Commands
     {
         Document Doc;
         List<Room> Rooms;
+        private string selectedRoom2;
 
         public ToolForm(Document doc)
         {
             InitializeComponent();
             Doc = doc;
             Rooms = GetAllRooms(doc);
+            Load += ToolForm_Load;
         }
 
         private void ToolForm_Load(object sender, EventArgs e)
         {
-
-         InitializeRoomList();
+            InitializeRoomList();
         }
 
         private void InitializeRoomList()
         {
-
-            listBox1.Items.Clear();
-
-           
+            comboBox1.Items.Clear();
+            comboBox2.Items.Clear();
             foreach (Room room in Rooms)
             {
                 string roomName = room.Name;
-
-                listBox1.Items.Add(roomName);
+                comboBox1.Items.Add(roomName);
+                comboBox2.Items.Add(roomName);
             }
         }
 
-        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            string selectedRoom = listBox1.SelectedItem.ToString();
-
-            Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom);
-
-            if (room != null)
+            if (comboBox1.SelectedItem != null)
             {
-                MessageBox.Show("Room seleccionado: " + room.Name);
+                string selectedRoom = comboBox1.SelectedItem.ToString();
+                Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom);
+
+                if (room != null)
+                {
+                    MessageBox.Show("Room seleccionado: " + room.Name);
+                }
             }
         }
 
+        private void ComboBox2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (comboBox2.SelectedItem != null)
+            {
+                string selectedRoom = comboBox2.SelectedItem.ToString();
+                Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom2);
+
+                if (room != null)
+                {
+                    MessageBox.Show("Room seleccionado: " + room.Name);
+                }
+            }
+        }
         private List<Room> GetAllRooms(Document doc)
         {
             List<Room> rooms = new List<Room>();
@@ -111,9 +125,10 @@ namespace My_Revit_Commands
 
         }
 
-        private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
-        {
+      
 
-        }
+       
     }
 }
+
+
