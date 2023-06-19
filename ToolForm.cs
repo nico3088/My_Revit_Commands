@@ -17,7 +17,6 @@ namespace My_Revit_Commands
     {
         Document Doc;
         List<Room> Rooms;
-        private string selectedRoom2;
 
         public ToolForm(Document doc)
         {
@@ -30,6 +29,8 @@ namespace My_Revit_Commands
         private void ToolForm_Load(object sender, EventArgs e)
         {
             InitializeRoomList();
+            InitializeFloorTypeList();
+            InitializeCeilingTypeList();
         }
 
         private void InitializeRoomList()
@@ -41,6 +42,38 @@ namespace My_Revit_Commands
                 string roomName = room.Name;
                 comboBox1.Items.Add(roomName);
                 comboBox2.Items.Add(roomName);
+            }
+        }
+
+        private void InitializeFloorTypeList()
+        {
+            comboBox3.Items.Clear();
+
+            FilteredElementCollector collector = new FilteredElementCollector(Doc);
+            collector.OfClass(typeof(FloorType));
+
+            foreach (FloorType floorType in collector)
+            {
+                if (floorType.IsValidObject)
+                {
+                    comboBox3.Items.Add(floorType.Name);
+                }
+            }
+        }
+
+        private void InitializeCeilingTypeList()
+        {
+            comboBox4.Items.Clear();
+
+            FilteredElementCollector collector = new FilteredElementCollector(Doc);
+            collector.OfClass(typeof(CeilingType));
+
+            foreach (CeilingType ceilingType in collector)
+            {
+                if (ceilingType.IsValidObject)
+                {
+                    comboBox4.Items.Add(ceilingType.Name);
+                }
             }
         }
 
@@ -63,7 +96,7 @@ namespace My_Revit_Commands
             if (comboBox2.SelectedItem != null)
             {
                 string selectedRoom = comboBox2.SelectedItem.ToString();
-                Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom2);
+                Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom);
 
                 if (room != null)
                 {
@@ -71,6 +104,7 @@ namespace My_Revit_Commands
                 }
             }
         }
+
         private List<Room> GetAllRooms(Document doc)
         {
             List<Room> rooms = new List<Room>();
@@ -125,10 +159,19 @@ namespace My_Revit_Commands
 
         }
 
-      
+        private void listView3_SelectedIndexChanged(object sender, EventArgs e)
+        {
 
-       
+        }
+
+        private void comboBox3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void comboBox4_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
-
-
