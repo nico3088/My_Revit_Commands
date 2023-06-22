@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Forms;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
@@ -15,9 +16,9 @@ namespace My_Revit_Commands
 {
     public partial class ToolForm : System.Windows.Forms.Form
     {
-        Document Doc;
-        List<Room> Rooms;
-        List<FloorType> FloorTypes;
+        private Document Doc;
+        private List<Room> Rooms;
+        private List<FloorType> FloorTypes;
 
         public ToolForm(Document doc)
         {
@@ -26,6 +27,7 @@ namespace My_Revit_Commands
             Rooms = GetAllRooms(doc);
             FloorTypes = GetFloorTypes(doc);
             Load += ToolForm_Load;
+            listBox1.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
         }
 
         private void ToolForm_Load(object sender, EventArgs e)
@@ -33,16 +35,17 @@ namespace My_Revit_Commands
             InitializeRoomList();
             InitializeFloorTypeList();
             InitializeCeilingTypeList();
+            InitializeLevelList();
         }
 
         private void InitializeRoomList()
         {
-            comboBox1.Items.Clear();
+            listBox1.Items.Clear();
             comboBox2.Items.Clear();
             foreach (Room room in Rooms)
             {
                 string roomName = room.Name;
-                comboBox1.Items.Add(roomName);
+                listBox1.Items.Add(roomName);
                 comboBox2.Items.Add(roomName);
             }
         }
@@ -73,32 +76,20 @@ namespace My_Revit_Commands
             }
         }
 
-        private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private CeilingType GetCeilingTypeByName(string ceilingTypeName)
         {
-            if (comboBox1.SelectedItem != null)
-            {
-                string selectedRoom = comboBox1.SelectedItem.ToString();
-                Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom);
+            FilteredElementCollector collector = new FilteredElementCollector(Doc);
+            collector.OfClass(typeof(CeilingType));
 
-                if (room != null)
+            foreach (CeilingType ceilingType in collector)
+            {
+                if (ceilingType.IsValidObject && ceilingType.Name == ceilingTypeName)
                 {
-                    MessageBox.Show("Room seleccionado: " + room.Name);
+                    return ceilingType;
                 }
             }
-        }
 
-        private void ComboBox2_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (comboBox2.SelectedItem != null)
-            {
-                string selectedRoom = comboBox2.SelectedItem.ToString();
-                Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom);
-
-                if (room != null)
-                {
-                    MessageBox.Show("Room seleccionado: " + room.Name);
-                }
-            }
+            return null;
         }
 
         private List<Room> GetAllRooms(Document doc)
@@ -133,97 +124,176 @@ namespace My_Revit_Commands
             return floorTypes;
         }
 
+        private void GetAvailableFloorTypes()
+        {
+            FilteredElementCollector collector = new FilteredElementCollector(Doc);
+            collector.OfClass(typeof(FloorType));
+
+            List<string> floorTypeNames = new List<string>();
+
+            foreach (FloorType floorType in collector)
+            {
+                if (floorType.IsValidObject)
+                {
+                    floorTypeNames.Add(floorType.Name);
+                }
+            }
 
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
+            foreach (string name in floorTypeNames)
+            {
+                Console.WriteLine(name);
+            }
         }
 
-        private void domainUpDown1_SelectedItemChanged(object sender, EventArgs e)
+        private void InitializeLevelList()
         {
-        }
+            comboBox1.Items.Clear();
 
-        private void label1_Click(object sender, EventArgs e)
-        {
-        }
+            FilteredElementCollector collector = new FilteredElementCollector(Doc);
+            ICollection<Element> elements = collector.OfClass(typeof(Level)).ToElements();
 
-        private void label2_Click(object sender, EventArgs e)
-        {
+            foreach (Element element in elements)
+            {
+                Level level = element as Level;
+                if (level != null && level.IsValidObject)
+                {
+                    Parameter parameter = level.LookupParameter("LEVEL_NUMBER");
+                    if (parameter != null && parameter.HasValue)
+                    {
+                        string levelNumber = parameter.AsString();
+                        comboBox1.Items.Add(level);
+                    }
+                }
+            }
         }
-
-        private void label3_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void label5_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void label6_Click(object sender, EventArgs e)
-        {
-        }
-
-        private void listView3_SelectedIndexChanged(object sender, EventArgs e)
-        {
-        }
-        private void comboBox3_SelectedIndexChanged(object sender, EventArgs e)
-        {
-         
-        }
-        private void comboBox4_SelectedIndexChanged(object sender, EventArgs e)
-        {
-        }
-
-        private void ToolForm_Load_1(object sender, EventArgs e)
-        {
-        }
-
-        private void textBox3_TextChanged(object sender, EventArgs e)
-        {
-        }
-
         private void button1_Click_1(object sender, EventArgs e)
         {
-            if (comboBox1.SelectedItem != null && comboBox3.SelectedItem != null)
+            if (listBox1.SelectedItems.Count > 0 && comboBox3.SelectedItem != null)
             {
-                string selectedRoom = comboBox1.SelectedItem.ToString();
                 string selectedFloorType = comboBox3.SelectedItem.ToString();
-
-                Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom);
                 FloorType floorType = FloorTypes.FirstOrDefault(ft => ft.Name == selectedFloorType);
 
-                if (room != null && floorType != null)
+                if (floorType != null)
                 {
-                    // Crear el piso en la habitación seleccionada
-                    Transaction trans = new Transaction(Doc, "Crear Piso");
+                    Transaction trans = new Transaction(Doc, "Crear Pisos");
+
                     if (trans.Start() == TransactionStatus.Started)
                     {
                         Level level = Doc.ActiveView.GenLevel;
-                        CurveArray curveArray = new CurveArray();
 
-                        IList<IList<BoundarySegment>> boundarySegments = room.GetBoundarySegments(new SpatialElementBoundaryOptions());
-                        foreach (IList<BoundarySegment> segmentList in boundarySegments)
+                        foreach (object selectedItem in listBox1.SelectedItems)
                         {
-                            foreach (BoundarySegment segment in segmentList)
+                            string selectedRoom = selectedItem.ToString();
+                            Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom);
+
+                            if (room != null)
                             {
-                                curveArray.Append(segment.GetCurve());
+                                CurveArray curveArray = new CurveArray();
+
+                                IList<IList<BoundarySegment>> boundarySegments = room.GetBoundarySegments(new SpatialElementBoundaryOptions());
+                                foreach (IList<BoundarySegment> segmentList in boundarySegments)
+                                {
+                                    foreach (BoundarySegment segment in segmentList)
+                                    {
+                                        curveArray.Append(segment.GetCurve());
+                                    }
+                                }
+
+                                Floor floor = Doc.Create.NewFloor(curveArray, floorType, level, false);
                             }
                         }
 
-                        Floor floor = Doc.Create.NewFloor(curveArray, floorType, level, false);
                         trans.Commit();
                         trans.Dispose();
-                        MessageBox.Show("Se ha creado el piso correctamente.");
+                        MessageBox.Show("Se han creado los pisos correctamente.");
                     }
                 }
             }
             else
             {
-                MessageBox.Show("Debes seleccionar un Room y un tipo de piso.");
+                MessageBox.Show("Debes seleccionar al menos un Room y un tipo de piso.");
             }
         }
 
-        private void button2_Click(object sender, EventArgs e)
+
+        private void domainUpDown1_SelectedItemChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label5_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label6_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void listView3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void comboBox3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void comboBox4_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ToolForm_Load_1(object sender, EventArgs e)
+        {
+
+        }
+
+
+        private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void comboBox2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox4_TextChanged(object sender, EventArgs e)
         {
 
         }
