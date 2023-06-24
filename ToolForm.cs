@@ -19,6 +19,7 @@ namespace My_Revit_Commands
         private Document Doc;
         private List<Room> Rooms;
         private List<FloorType> FloorTypes;
+        private double floorOffset;
 
         public ToolForm(Document doc)
         {
@@ -125,28 +126,6 @@ namespace My_Revit_Commands
             return floorTypes;
         }
 
-        private void GetAvailableFloorTypes()
-        {
-            FilteredElementCollector collector = new FilteredElementCollector(Doc);
-            collector.OfClass(typeof(FloorType));
-
-            List<string> floorTypeNames = new List<string>();
-
-            foreach (FloorType floorType in collector)
-            {
-                if (floorType.IsValidObject)
-                {
-                    floorTypeNames.Add(floorType.Name);
-                }
-            }
-
-
-            foreach (string name in floorTypeNames)
-            {
-                Console.WriteLine(name);
-            }
-        }
-
         private void InitializeLevelList()
         {
             comboBox1.Items.Clear();
@@ -168,6 +147,7 @@ namespace My_Revit_Commands
                 }
             }
         }
+
         private void button1_Click_1(object sender, EventArgs e)
         {
             if (listBox1.SelectedItems.Count > 0 && comboBox3.SelectedItem != null)
@@ -190,14 +170,17 @@ namespace My_Revit_Commands
 
                             if (room != null)
                             {
+                                IList<IList<BoundarySegment>> boundarySegments = room.GetBoundarySegments(new SpatialElementBoundaryOptions());
                                 CurveArray curveArray = new CurveArray();
 
-                                IList<IList<BoundarySegment>> boundarySegments = room.GetBoundarySegments(new SpatialElementBoundaryOptions());
                                 foreach (IList<BoundarySegment> segmentList in boundarySegments)
                                 {
                                     foreach (BoundarySegment segment in segmentList)
                                     {
-                                        curveArray.Append(segment.GetCurve());
+                                        Curve curve = segment.GetCurve();
+                                        XYZ offsetVector = new XYZ(floorOffset, 0, 0); // Desplazamiento horizontal
+                                        Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector)); // Aplicar el desplazamiento (offset)
+                                        curveArray.Append(offsetCurve);
                                     }
                                 }
 
@@ -206,7 +189,6 @@ namespace My_Revit_Commands
                         }
 
                         trans.Commit();
-                        trans.Dispose();
                         MessageBox.Show("Se han creado los pisos correctamente.");
                     }
                 }
@@ -216,84 +198,9 @@ namespace My_Revit_Commands
                 MessageBox.Show("Debes seleccionar al menos un Room y un tipo de piso.");
             }
         }
-
-
-        private void domainUpDown1_SelectedItemChanged(object sender, EventArgs e)
+        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
         {
-
-        }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label2_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label3_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label5_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label6_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void listView3_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void comboBox3_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void comboBox4_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void ToolForm_Load_1(object sender, EventArgs e)
-        {
-
-        }
-
-
-
-
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void comboBox2_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void textBox4_TextChanged(object sender, EventArgs e)
-        {
-
+            floorOffset = (double)numericUpDown1.Value;
         }
     }
 }
