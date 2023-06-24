@@ -28,6 +28,7 @@ namespace My_Revit_Commands
             FloorTypes = GetFloorTypes(doc);
             Load += ToolForm_Load;
             listBox1.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
+            listBox2.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
         }
 
         private void ToolForm_Load(object sender, EventArgs e)
@@ -41,12 +42,12 @@ namespace My_Revit_Commands
         private void InitializeRoomList()
         {
             listBox1.Items.Clear();
-            comboBox2.Items.Clear();
+            listBox2.Items.Clear();
             foreach (Room room in Rooms)
             {
                 string roomName = room.Name;
                 listBox1.Items.Add(roomName);
-                comboBox2.Items.Add(roomName);
+                listBox2.Items.Add(roomName);
             }
         }
 
@@ -268,10 +269,7 @@ namespace My_Revit_Commands
         }
 
 
-        private void listBox1_SelectedIndexChanged_1(object sender, EventArgs e)
-        {
 
-        }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
