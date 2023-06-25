@@ -19,6 +19,7 @@ namespace My_Revit_Commands
         private Document Doc;
         private List<Room> Rooms;
         private List<FloorType> FloorTypes;
+        private List<Level> Levels;
         private double floorOffset;
 
         public ToolForm(Document doc)
@@ -27,6 +28,7 @@ namespace My_Revit_Commands
             Doc = doc;
             Rooms = GetAllRooms(doc);
             FloorTypes = GetFloorTypes(doc);
+            Levels = GetLevels(doc);
             Load += ToolForm_Load;
             listBox1.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
             listBox2.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
@@ -126,11 +128,11 @@ namespace My_Revit_Commands
             return floorTypes;
         }
 
-        private void InitializeLevelList()
+        private List<Level> GetLevels(Document doc)
         {
-            comboBox1.Items.Clear();
+            List<Level> levels = new List<Level>();
 
-            FilteredElementCollector collector = new FilteredElementCollector(Doc);
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
             ICollection<Element> elements = collector.OfClass(typeof(Level)).ToElements();
 
             foreach (Element element in elements)
@@ -138,19 +140,26 @@ namespace My_Revit_Commands
                 Level level = element as Level;
                 if (level != null && level.IsValidObject)
                 {
-                    Parameter parameter = level.LookupParameter("LEVEL_NUMBER");
-                    if (parameter != null && parameter.HasValue)
-                    {
-                        string levelNumber = parameter.AsString();
-                        comboBox1.Items.Add(level);
-                    }
+                    levels.Add(level);
                 }
+            }
+
+            return levels;
+        }
+
+        private void InitializeLevelList()
+        {
+            comboBox1.Items.Clear();
+
+            foreach (Level level in Levels)
+            {
+                comboBox1.Items.Add(level.Name);
             }
         }
 
         private void button1_Click_1(object sender, EventArgs e)
         {
-            if (listBox1.SelectedItems.Count > 0 && comboBox3.SelectedItem != null)
+            if (listBox1.SelectedItems.Count > 0 && comboBox1.SelectedItem != null && comboBox3.SelectedItem != null)
             {
                 string selectedFloorType = comboBox3.SelectedItem.ToString();
                 FloorType floorType = FloorTypes.FirstOrDefault(ft => ft.Name == selectedFloorType);
@@ -161,7 +170,8 @@ namespace My_Revit_Commands
 
                     if (trans.Start() == TransactionStatus.Started)
                     {
-                        Level level = Doc.ActiveView.GenLevel;
+                        Level selectedLevel = Levels.FirstOrDefault(level => level.Name == comboBox1.SelectedItem.ToString());
+                        double offset = (double)numericUpDown1.Value;
 
                         foreach (object selectedItem in listBox1.SelectedItems)
                         {
@@ -178,13 +188,13 @@ namespace My_Revit_Commands
                                     foreach (BoundarySegment segment in segmentList)
                                     {
                                         Curve curve = segment.GetCurve();
-                                        XYZ offsetVector = new XYZ(floorOffset, 0, 0); // Desplazamiento horizontal
-                                        Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector)); // Aplicar el desplazamiento (offset)
+                                        XYZ offsetVector = new XYZ(offset, 0, 0); // Offset horizontal
+                                        Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
                                         curveArray.Append(offsetCurve);
                                     }
                                 }
 
-                                Floor floor = Doc.Create.NewFloor(curveArray, floorType, level, false);
+                                Floor floor = Doc.Create.NewFloor(curveArray, floorType, selectedLevel, false);
                             }
                         }
 
@@ -195,9 +205,10 @@ namespace My_Revit_Commands
             }
             else
             {
-                MessageBox.Show("Debes seleccionar al menos un Room y un tipo de piso.");
+                MessageBox.Show("Debes seleccionar al menos un Room, un Level y un tipo de piso.");
             }
         }
+
         private void numericUpDown1_ValueChanged(object sender, EventArgs e)
         {
             floorOffset = (double)numericUpDown1.Value;
