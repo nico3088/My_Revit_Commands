@@ -166,12 +166,13 @@ namespace My_Revit_Commands
 
                 if (floorType != null)
                 {
-                    Transaction trans = new Transaction(Doc, "Crear Pisos");
+                    Transaction trans = new Transaction(Doc, "Create Floors");
 
                     if (trans.Start() == TransactionStatus.Started)
                     {
                         Level selectedLevel = Levels.FirstOrDefault(level => level.Name == comboBox1.SelectedItem.ToString());
                         double offset = (double)numericUpDown1.Value;
+                        int createdFloorCount = 0;
 
                         foreach (object selectedItem in listBox1.SelectedItems)
                         {
@@ -188,27 +189,28 @@ namespace My_Revit_Commands
                                     foreach (BoundarySegment segment in segmentList)
                                     {
                                         Curve curve = segment.GetCurve();
-                                        XYZ offsetVector = new XYZ(offset, 0, 0); // Offset horizontal
+                                        XYZ offsetVector = new XYZ(offset, 0, 0); // Horizontal offset
                                         Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
                                         curveArray.Append(offsetCurve);
                                     }
                                 }
 
                                 Floor floor = Doc.Create.NewFloor(curveArray, floorType, selectedLevel, false);
+                                if (floor != null)
+                                    createdFloorCount++;
                             }
                         }
 
                         trans.Commit();
-                        MessageBox.Show("Se han creado los pisos correctamente.");
+                        MessageBox.Show("Created " + createdFloorCount.ToString() + " floors successfully.");
                     }
                 }
             }
             else
             {
-                MessageBox.Show("Debes seleccionar al menos un Room, un Level y un tipo de piso.");
+                MessageBox.Show("You must select at least one Room, one Level, and one Floor Type.");
             }
         }
-
         private void numericUpDown1_ValueChanged(object sender, EventArgs e)
         {
             floorOffset = (double)numericUpDown1.Value;
