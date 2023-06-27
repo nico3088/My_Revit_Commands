@@ -154,7 +154,6 @@
             this.comboBox3.Name = "comboBox3";
             this.comboBox3.Size = new System.Drawing.Size(179, 21);
             this.comboBox3.TabIndex = 21;
-            
             // 
             // comboBox4
             // 
@@ -163,7 +162,6 @@
             this.comboBox4.Name = "comboBox4";
             this.comboBox4.Size = new System.Drawing.Size(179, 21);
             this.comboBox4.TabIndex = 22;
-        
             // 
             // textBox4
             // 
@@ -182,7 +180,6 @@
             this.listBox1.Name = "listBox1";
             this.listBox1.Size = new System.Drawing.Size(120, 30);
             this.listBox1.TabIndex = 25;
-
             // 
             // listBox2
             // 
@@ -191,7 +188,6 @@
             this.listBox2.Name = "listBox2";
             this.listBox2.Size = new System.Drawing.Size(120, 30);
             this.listBox2.TabIndex = 26;
-
             // 
             // comboBox1
             // 
@@ -223,17 +219,17 @@
             // 
             this.numericUpDown1.Location = new System.Drawing.Point(234, 50);
             this.numericUpDown1.Name = "numericUpDown1";
-            this.numericUpDown1.Size = new System.Drawing.Size(33, 20);
+            this.numericUpDown1.Size = new System.Drawing.Size(47, 20);
             this.numericUpDown1.TabIndex = 31;
             this.numericUpDown1.ValueChanged += new System.EventHandler(this.numericUpDown1_ValueChanged);
+
             // 
             // numericUpDown2
             // 
             this.numericUpDown2.Location = new System.Drawing.Point(234, 122);
             this.numericUpDown2.Name = "numericUpDown2";
-            this.numericUpDown2.Size = new System.Drawing.Size(33, 20);
+            this.numericUpDown2.Size = new System.Drawing.Size(47, 20);
             this.numericUpDown2.TabIndex = 32;
-            
             // 
             // ToolForm
             // 

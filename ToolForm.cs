@@ -21,6 +21,8 @@ namespace My_Revit_Commands
         private List<FloorType> FloorTypes;
         private List<Level> Levels;
         private double floorOffset;
+        private decimal offsetIncrement = 0.1M;
+        private decimal currentOffset = 0.0M;
 
         public ToolForm(Document doc)
         {
@@ -40,6 +42,8 @@ namespace My_Revit_Commands
             InitializeFloorTypeList();
             InitializeCeilingTypeList();
             InitializeLevelList();
+            InitializeNumericUpDown();
+
         }
 
         private void InitializeRoomList()
@@ -189,7 +193,7 @@ namespace My_Revit_Commands
                                     foreach (BoundarySegment segment in segmentList)
                                     {
                                         Curve curve = segment.GetCurve();
-                                        XYZ offsetVector = new XYZ(offset, 0, 0); // Horizontal offset
+                                        XYZ offsetVector = new XYZ(offset, 0, 0); // Desplazamiento horizontal
                                         Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
                                         curveArray.Append(offsetCurve);
                                     }
@@ -211,9 +215,24 @@ namespace My_Revit_Commands
                 MessageBox.Show("You must select at least one Room, one Level, and one Floor Type.");
             }
         }
+
         private void numericUpDown1_ValueChanged(object sender, EventArgs e)
         {
             floorOffset = (double)numericUpDown1.Value;
+            currentOffset = (decimal)floorOffset;
+            UpdateNumericUpDownIncrement();
         }
+
+        private void UpdateNumericUpDownIncrement()
+        {
+            numericUpDown1.Increment = offsetIncrement;
+        }
+
+        private void InitializeNumericUpDown()
+        {
+            numericUpDown1.DecimalPlaces = 1;
+            numericUpDown1.Increment = 0.1m; 
+        }
+
     }
 }
