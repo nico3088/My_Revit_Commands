@@ -16,10 +16,11 @@ namespace My_Revit_Commands
 {
     public partial class ToolForm : System.Windows.Forms.Form
     {
-        private Document Doc;
+        private Document doc;
         private List<Room> Rooms;
         private List<FloorType> FloorTypes;
         private List<Level> Levels;
+        private List<CeilingType> CeilingTypes;
         private double floorOffset;
         private decimal offsetIncrement = 0.1M;
         private decimal currentOffset = 0.0M;
@@ -27,7 +28,7 @@ namespace My_Revit_Commands
         public ToolForm(Document doc)
         {
             InitializeComponent();
-            Doc = doc;
+            this.doc = doc;
             Rooms = GetAllRooms(doc);
             FloorTypes = GetFloorTypes(doc);
             Levels = GetLevels(doc);
@@ -43,7 +44,6 @@ namespace My_Revit_Commands
             InitializeCeilingTypeList();
             InitializeLevelList();
             InitializeNumericUpDown();
-
         }
 
         private void InitializeRoomList()
@@ -72,7 +72,9 @@ namespace My_Revit_Commands
         {
             comboBox4.Items.Clear();
 
-            FilteredElementCollector collector = new FilteredElementCollector(Doc);
+            CeilingTypes = new List<CeilingType>();
+
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
             collector.OfClass(typeof(CeilingType));
 
             foreach (CeilingType ceilingType in collector)
@@ -80,13 +82,14 @@ namespace My_Revit_Commands
                 if (ceilingType.IsValidObject)
                 {
                     comboBox4.Items.Add(ceilingType.Name);
+                    CeilingTypes.Add(ceilingType);
                 }
             }
         }
 
         private CeilingType GetCeilingTypeByName(string ceilingTypeName)
         {
-            FilteredElementCollector collector = new FilteredElementCollector(Doc);
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
             collector.OfClass(typeof(CeilingType));
 
             foreach (CeilingType ceilingType in collector)
@@ -154,10 +157,12 @@ namespace My_Revit_Commands
         private void InitializeLevelList()
         {
             comboBox1.Items.Clear();
+            comboBox2.Items.Clear();
 
             foreach (Level level in Levels)
             {
                 comboBox1.Items.Add(level.Name);
+                comboBox2.Items.Add(level.Name);
             }
         }
 
@@ -170,7 +175,7 @@ namespace My_Revit_Commands
 
                 if (floorType != null)
                 {
-                    Transaction trans = new Transaction(Doc, "Create Floors");
+                    Transaction trans = new Transaction(doc, "Create Floors");
 
                     if (trans.Start() == TransactionStatus.Started)
                     {
@@ -193,13 +198,13 @@ namespace My_Revit_Commands
                                     foreach (BoundarySegment segment in segmentList)
                                     {
                                         Curve curve = segment.GetCurve();
-                                        XYZ offsetVector = new XYZ(offset, 0, 0); // Desplazamiento horizontal
+                                        XYZ offsetVector = new XYZ(0, 0, offset);
                                         Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
                                         curveArray.Append(offsetCurve);
                                     }
                                 }
 
-                                Floor floor = Doc.Create.NewFloor(curveArray, floorType, selectedLevel, false);
+                                Floor floor = doc.Create.NewFloor(curveArray, floorType, selectedLevel, false);
                                 if (floor != null)
                                     createdFloorCount++;
                             }
@@ -231,8 +236,9 @@ namespace My_Revit_Commands
         private void InitializeNumericUpDown()
         {
             numericUpDown1.DecimalPlaces = 1;
-            numericUpDown1.Increment = 0.1m; 
+            numericUpDown1.Increment = 0.1m;
         }
 
+        
     }
 }

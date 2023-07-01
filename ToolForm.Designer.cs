@@ -146,6 +146,7 @@
             this.button2.TabIndex = 18;
             this.button2.Text = "Create";
             this.button2.UseVisualStyleBackColor = true;
+            
             // 
             // comboBox3
             // 
@@ -222,7 +223,6 @@
             this.numericUpDown1.Size = new System.Drawing.Size(47, 20);
             this.numericUpDown1.TabIndex = 31;
             this.numericUpDown1.ValueChanged += new System.EventHandler(this.numericUpDown1_ValueChanged);
-
             // 
             // numericUpDown2
             // 
