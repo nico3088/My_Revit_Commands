@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -191,20 +193,22 @@ namespace My_Revit_Commands
                             if (room != null)
                             {
                                 IList<IList<BoundarySegment>> boundarySegments = room.GetBoundarySegments(new SpatialElementBoundaryOptions());
-                                CurveArray curveArray = new CurveArray();
+                                IList<CurveLoop> curveLoops = new List<CurveLoop>();
 
                                 foreach (IList<BoundarySegment> segmentList in boundarySegments)
                                 {
+                                    CurveLoop curveLoop = new CurveLoop();
                                     foreach (BoundarySegment segment in segmentList)
                                     {
                                         Curve curve = segment.GetCurve();
                                         XYZ offsetVector = new XYZ(0, 0, offset);
                                         Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
-                                        curveArray.Append(offsetCurve);
+                                        curveLoop.Append(offsetCurve);
                                     }
+                                    curveLoops.Add(curveLoop);
                                 }
 
-                                Floor floor = doc.Create.NewFloor(curveArray, floorType, selectedLevel, false);
+                                Floor floor = Floor.Create(doc, curveLoops, floorType.Id, selectedLevel.Id, false, null, 0);
                                 if (floor != null)
                                     createdFloorCount++;
                             }
@@ -239,6 +243,66 @@ namespace My_Revit_Commands
             numericUpDown1.Increment = 0.1m;
         }
 
-        
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (listBox2.SelectedItems.Count > 0 && comboBox2.SelectedItem != null && comboBox4.SelectedItem != null)
+            {
+                string selectedCeilingType = comboBox4.SelectedItem.ToString();
+                CeilingType ceilingType = GetCeilingTypeByName(selectedCeilingType);
+
+                if (ceilingType != null)
+                {
+                    Transaction trans = new Transaction(doc, "Create Ceilings");
+
+                    if (trans.Start() == TransactionStatus.Started)
+                    {
+                        Level selectedLevel = Levels.FirstOrDefault(level => level.Name == comboBox2.SelectedItem.ToString());
+                        double offset = (double)numericUpDown2.Value;
+                        int createdCeilingCount = 0;
+
+                        foreach (object selectedItem in listBox2.SelectedItems)
+                        {
+                            string selectedRoom = selectedItem.ToString();
+                            Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom);
+
+                            if (room != null)
+                            {
+                                IList<IList<BoundarySegment>> boundarySegments = room.GetBoundarySegments(new SpatialElementBoundaryOptions());
+                                CurveLoop profile = new CurveLoop();
+
+                                foreach (IList<BoundarySegment> segmentList in boundarySegments)
+                                {
+                                    foreach (BoundarySegment segment in segmentList)
+                                    {
+                                        Curve curve = segment.GetCurve();
+                                        XYZ offsetVector = new XYZ(0, 0, offset);
+                                        Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
+                                        profile.Append(offsetCurve);
+                                    }
+                                }
+
+                                var ceiling = Ceiling.Create(doc, new List<CurveLoop> { profile }, ceilingType.Id, selectedLevel.Id, null, 0.0);
+                                if (ceiling != null)
+                                    createdCeilingCount++;
+                            }
+                        }
+
+                        trans.Commit();
+                        MessageBox.Show("Created " + createdCeilingCount.ToString() + " ceilings successfully.");
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("You must select at least one Room, one Level, and one Ceiling Type.");
+            }
+        }
     }
-}
+
+ }
+
+
+
+
+
