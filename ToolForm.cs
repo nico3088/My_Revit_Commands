@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -16,10 +18,11 @@ namespace My_Revit_Commands
 {
     public partial class ToolForm : System.Windows.Forms.Form
     {
-        private Document Doc;
+        private Document doc;
         private List<Room> Rooms;
         private List<FloorType> FloorTypes;
         private List<Level> Levels;
+        private List<CeilingType> CeilingTypes;
         private double floorOffset;
         private decimal offsetIncrement = 0.1M;
         private decimal currentOffset = 0.0M;
@@ -27,7 +30,7 @@ namespace My_Revit_Commands
         public ToolForm(Document doc)
         {
             InitializeComponent();
-            Doc = doc;
+            this.doc = doc;
             Rooms = GetAllRooms(doc);
             FloorTypes = GetFloorTypes(doc);
             Levels = GetLevels(doc);
@@ -43,7 +46,6 @@ namespace My_Revit_Commands
             InitializeCeilingTypeList();
             InitializeLevelList();
             InitializeNumericUpDown();
-
         }
 
         private void InitializeRoomList()
@@ -72,7 +74,9 @@ namespace My_Revit_Commands
         {
             comboBox4.Items.Clear();
 
-            FilteredElementCollector collector = new FilteredElementCollector(Doc);
+            CeilingTypes = new List<CeilingType>();
+
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
             collector.OfClass(typeof(CeilingType));
 
             foreach (CeilingType ceilingType in collector)
@@ -80,13 +84,14 @@ namespace My_Revit_Commands
                 if (ceilingType.IsValidObject)
                 {
                     comboBox4.Items.Add(ceilingType.Name);
+                    CeilingTypes.Add(ceilingType);
                 }
             }
         }
 
         private CeilingType GetCeilingTypeByName(string ceilingTypeName)
         {
-            FilteredElementCollector collector = new FilteredElementCollector(Doc);
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
             collector.OfClass(typeof(CeilingType));
 
             foreach (CeilingType ceilingType in collector)
@@ -154,10 +159,12 @@ namespace My_Revit_Commands
         private void InitializeLevelList()
         {
             comboBox1.Items.Clear();
+            comboBox2.Items.Clear();
 
             foreach (Level level in Levels)
             {
                 comboBox1.Items.Add(level.Name);
+                comboBox2.Items.Add(level.Name);
             }
         }
 
@@ -170,7 +177,7 @@ namespace My_Revit_Commands
 
                 if (floorType != null)
                 {
-                    Transaction trans = new Transaction(Doc, "Create Floors");
+                    Transaction trans = new Transaction(doc, "Create Floors");
 
                     if (trans.Start() == TransactionStatus.Started)
                     {
@@ -186,20 +193,22 @@ namespace My_Revit_Commands
                             if (room != null)
                             {
                                 IList<IList<BoundarySegment>> boundarySegments = room.GetBoundarySegments(new SpatialElementBoundaryOptions());
-                                CurveArray curveArray = new CurveArray();
+                                IList<CurveLoop> curveLoops = new List<CurveLoop>();
 
                                 foreach (IList<BoundarySegment> segmentList in boundarySegments)
                                 {
+                                    CurveLoop curveLoop = new CurveLoop();
                                     foreach (BoundarySegment segment in segmentList)
                                     {
                                         Curve curve = segment.GetCurve();
-                                        XYZ offsetVector = new XYZ(offset, 0, 0); // Desplazamiento horizontal
+                                        XYZ offsetVector = new XYZ(0, 0, offset);
                                         Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
-                                        curveArray.Append(offsetCurve);
+                                        curveLoop.Append(offsetCurve);
                                     }
+                                    curveLoops.Add(curveLoop);
                                 }
 
-                                Floor floor = Doc.Create.NewFloor(curveArray, floorType, selectedLevel, false);
+                                Floor floor = Floor.Create(doc, curveLoops, floorType.Id, selectedLevel.Id, false, null, 0);
                                 if (floor != null)
                                     createdFloorCount++;
                             }
@@ -231,8 +240,69 @@ namespace My_Revit_Commands
         private void InitializeNumericUpDown()
         {
             numericUpDown1.DecimalPlaces = 1;
-            numericUpDown1.Increment = 0.1m; 
+            numericUpDown1.Increment = 0.1m;
         }
 
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (listBox2.SelectedItems.Count > 0 && comboBox2.SelectedItem != null && comboBox4.SelectedItem != null)
+            {
+                string selectedCeilingType = comboBox4.SelectedItem.ToString();
+                CeilingType ceilingType = GetCeilingTypeByName(selectedCeilingType);
+
+                if (ceilingType != null)
+                {
+                    Transaction trans = new Transaction(doc, "Create Ceilings");
+
+                    if (trans.Start() == TransactionStatus.Started)
+                    {
+                        Level selectedLevel = Levels.FirstOrDefault(level => level.Name == comboBox2.SelectedItem.ToString());
+                        double offset = (double)numericUpDown2.Value;
+                        int createdCeilingCount = 0;
+
+                        foreach (object selectedItem in listBox2.SelectedItems)
+                        {
+                            string selectedRoom = selectedItem.ToString();
+                            Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom);
+
+                            if (room != null)
+                            {
+                                IList<IList<BoundarySegment>> boundarySegments = room.GetBoundarySegments(new SpatialElementBoundaryOptions());
+                                CurveLoop profile = new CurveLoop();
+
+                                foreach (IList<BoundarySegment> segmentList in boundarySegments)
+                                {
+                                    foreach (BoundarySegment segment in segmentList)
+                                    {
+                                        Curve curve = segment.GetCurve();
+                                        XYZ offsetVector = new XYZ(0, 0, offset);
+                                        Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
+                                        profile.Append(offsetCurve);
+                                    }
+                                }
+
+                                var ceiling = Ceiling.Create(doc, new List<CurveLoop> { profile }, ceilingType.Id, selectedLevel.Id, null, 0.0);
+                                if (ceiling != null)
+                                    createdCeilingCount++;
+                            }
+                        }
+
+                        trans.Commit();
+                        MessageBox.Show("Created " + createdCeilingCount.ToString() + " ceilings successfully.");
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("You must select at least one Room, one Level, and one Ceiling Type.");
+            }
+        }
     }
-}
+
+ }
+
+
+
+
+
