@@ -35,8 +35,7 @@ namespace My_Revit_Commands
             FloorTypes = GetFloorTypes(doc);
             Levels = GetLevels(doc);
             Load += ToolForm_Load;
-            listBox1.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-            listBox2.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
+            listBox1.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended; 
         }
 
         private void ToolForm_Load(object sender, EventArgs e)
@@ -51,12 +50,10 @@ namespace My_Revit_Commands
         private void InitializeRoomList()
         {
             listBox1.Items.Clear();
-            listBox2.Items.Clear();
             foreach (Room room in Rooms)
             {
                 string roomName = room.Name;
                 listBox1.Items.Add(roomName);
-                listBox2.Items.Add(roomName);
             }
         }
 
@@ -246,7 +243,7 @@ namespace My_Revit_Commands
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if (listBox2.SelectedItems.Count > 0 && comboBox2.SelectedItem != null && comboBox4.SelectedItem != null)
+            if (listBox1.SelectedItems.Count > 0 && comboBox2.SelectedItem != null && comboBox4.SelectedItem != null)
             {
                 string selectedCeilingType = comboBox4.SelectedItem.ToString();
                 CeilingType ceilingType = GetCeilingTypeByName(selectedCeilingType);
@@ -261,7 +258,7 @@ namespace My_Revit_Commands
                         double offset = (double)numericUpDown2.Value;
                         int createdCeilingCount = 0;
 
-                        foreach (object selectedItem in listBox2.SelectedItems)
+                        foreach (object selectedItem in listBox1.SelectedItems)
                         {
                             string selectedRoom = selectedItem.ToString();
                             Room room = Rooms.FirstOrDefault(r => r.Name == selectedRoom);
