@@ -22,7 +22,7 @@ namespace My_Revit_Commands
         private List<Room> Rooms;
         private List<FloorType> FloorTypes;
         private List<Level> Levels;
-        private List<CeilingType> CeilingTypes;
+        private List<CeilingType> ceilingTypes;
         private double floorOffset;
         private decimal offsetIncrement = 0.1M;
         private decimal currentOffset = 0.0M;
@@ -74,7 +74,7 @@ namespace My_Revit_Commands
         {
             comboBox4.Items.Clear();
 
-            CeilingTypes = new List<CeilingType>();
+            ceilingTypes = new List<CeilingType>();
 
             FilteredElementCollector collector = new FilteredElementCollector(doc);
             collector.OfClass(typeof(CeilingType));
@@ -84,7 +84,7 @@ namespace My_Revit_Commands
                 if (ceilingType.IsValidObject)
                 {
                     comboBox4.Items.Add(ceilingType.Name);
-                    CeilingTypes.Add(ceilingType);
+                    ceilingTypes.Add(ceilingType);
                 }
             }
         }
@@ -167,7 +167,7 @@ namespace My_Revit_Commands
                 comboBox2.Items.Add(level.Name);
             }
         }
-
+        
         private void button1_Click_1(object sender, EventArgs e)
         {
             if (listBox1.SelectedItems.Count > 0 && comboBox1.SelectedItem != null && comboBox3.SelectedItem != null)
@@ -282,7 +282,7 @@ namespace My_Revit_Commands
                                     }
                                 }
 
-                                var ceiling = Ceiling.Create(doc, new List<CurveLoop> { profile }, ceilingType.Id, selectedLevel.Id, null, 0.0);
+                                Ceiling ceiling = Ceiling.Create(doc, new List<CurveLoop> { profile }, ceilingType.Id, selectedLevel.Id, null, 0.0);
                                 if (ceiling != null)
                                     createdCeilingCount++;
                             }
@@ -301,8 +301,3 @@ namespace My_Revit_Commands
     }
 
  }
-
-
-
-
-
