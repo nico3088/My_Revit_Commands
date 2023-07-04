@@ -106,7 +106,9 @@ namespace My_Revit_Commands
         {
             List<Room> rooms = new List<Room>();
 
-            FilteredElementCollector collector = new FilteredElementCollector(doc);
+            Autodesk.Revit.DB.View view = doc.ActiveView;
+
+            FilteredElementCollector collector = new FilteredElementCollector(doc, view.Id);
             ICollection<Element> elements = collector.OfClass(typeof(SpatialElement)).ToElements();
 
             IEnumerable<Room> roomElements = elements.Where(elem => elem is Room).Cast<Room>();
