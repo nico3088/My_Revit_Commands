@@ -13,6 +13,7 @@ using System.Windows.Forms;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
+using Autodesk.Revit.ApplicationServices;
 
 namespace My_Revit_Commands
 {
@@ -167,6 +168,34 @@ namespace My_Revit_Commands
             }
         }
         
+        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
+        {
+            floorOffset = (double)numericUpDown1.Value;
+            currentOffset = (decimal)floorOffset;
+            UpdateNumericUpDownIncrement();
+        }
+
+        private void UpdateNumericUpDownIncrement()
+        {
+            numericUpDown1.Increment = offsetIncrement;
+            numericUpDown2.Increment = offsetIncrement;
+        }
+
+        private void InitializeNumericUpDown()
+        {
+            numericUpDown1.DecimalPlaces = 1;
+            numericUpDown1.Increment = 0.1m;
+            numericUpDown2.DecimalPlaces = 1;
+            numericUpDown2.Increment = 0.1m;
+        }
+
+        private void numericUpDown2_ValueChanged(object sender, EventArgs e)
+        {
+            offsetIncrement = numericUpDown2.Increment;
+            currentOffset = (decimal)floorOffset;
+            UpdateNumericUpDownIncrement();
+        }
+
         private void button1_Click_1(object sender, EventArgs e)
         {
             if (listBox1.SelectedItems.Count > 0 && comboBox1.SelectedItem != null && comboBox3.SelectedItem != null)
@@ -181,7 +210,7 @@ namespace My_Revit_Commands
                     if (trans.Start() == TransactionStatus.Started)
                     {
                         Level selectedLevel = Levels.FirstOrDefault(level => level.Name == comboBox1.SelectedItem.ToString());
-                        double offset = (double)numericUpDown1.Value;
+                        double offset = -(double)numericUpDown1.Value; // Aplicar el signo negativo al offset
                         int createdFloorCount = 0;
 
                         foreach (object selectedItem in listBox1.SelectedItems)
@@ -224,25 +253,6 @@ namespace My_Revit_Commands
             }
         }
 
-        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
-        {
-            floorOffset = (double)numericUpDown1.Value;
-            currentOffset = (decimal)floorOffset;
-            UpdateNumericUpDownIncrement();
-        }
-
-        private void UpdateNumericUpDownIncrement()
-        {
-            numericUpDown1.Increment = offsetIncrement;
-        }
-
-        private void InitializeNumericUpDown()
-        {
-            numericUpDown1.DecimalPlaces = 1;
-            numericUpDown1.Increment = 0.1m;
-        }
-
-
         private void button2_Click(object sender, EventArgs e)
         {
             if (listBox1.SelectedItems.Count > 0 && comboBox2.SelectedItem != null && comboBox4.SelectedItem != null)
@@ -257,7 +267,8 @@ namespace My_Revit_Commands
                     if (trans.Start() == TransactionStatus.Started)
                     {
                         Level selectedLevel = Levels.FirstOrDefault(level => level.Name == comboBox2.SelectedItem.ToString());
-                        double offset = (double)numericUpDown2.Value;
+                        double floorOffset = -(double)numericUpDown1.Value; // Offset del piso (se usa como base)
+                        double ceilingOffset = -(double)numericUpDown2.Value; // Offset del techo
                         int createdCeilingCount = 0;
 
                         foreach (object selectedItem in listBox1.SelectedItems)
@@ -275,13 +286,21 @@ namespace My_Revit_Commands
                                     foreach (BoundarySegment segment in segmentList)
                                     {
                                         Curve curve = segment.GetCurve();
-                                        XYZ offsetVector = new XYZ(0, 0, offset);
-                                        Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
-                                        profile.Append(offsetCurve);
+                                        XYZ floorOffsetVector = new XYZ(0, 0, floorOffset);
+                                        Curve floorOffsetCurve = curve.CreateTransformed(Transform.CreateTranslation(floorOffsetVector));
+                                        profile.Append(floorOffsetCurve);
                                     }
                                 }
 
-                                Ceiling ceiling = Ceiling.Create(doc, new List<CurveLoop> { profile }, ceilingType.Id, selectedLevel.Id, null, 0.0);
+                                CurveLoop offsetProfile = new CurveLoop();
+                                foreach (Curve curve in profile)
+                                {
+                                    XYZ ceilingOffsetVector = new XYZ(0, 0, ceilingOffset);
+                                    Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(ceilingOffsetVector));
+                                    offsetProfile.Append(offsetCurve);
+                                }
+
+                                Ceiling ceiling = Ceiling.Create(doc, new List<CurveLoop> { offsetProfile }, ceilingType.Id, selectedLevel.Id, null, 0.0);
                                 if (ceiling != null)
                                     createdCeilingCount++;
                             }
@@ -296,6 +315,11 @@ namespace My_Revit_Commands
             {
                 MessageBox.Show("You must select at least one Room, one Level, and one Ceiling Type.");
             }
+        }
+
+        private void comboBox4_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
         }
     }
 
