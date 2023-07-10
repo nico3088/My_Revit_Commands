@@ -13,7 +13,6 @@ using System.Windows.Forms;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
-using Autodesk.Revit.ApplicationServices;
 
 namespace My_Revit_Commands
 {
@@ -61,7 +60,6 @@ namespace My_Revit_Commands
         private void InitializeFloorTypeList()
         {
             comboBox3.Items.Clear();
-
             foreach (FloorType floorType in FloorTypes)
             {
                 comboBox3.Items.Add(floorType.Name);
@@ -71,12 +69,9 @@ namespace My_Revit_Commands
         private void InitializeCeilingTypeList()
         {
             comboBox4.Items.Clear();
-
             ceilingTypes = new List<CeilingType>();
-
             FilteredElementCollector collector = new FilteredElementCollector(doc);
             collector.OfClass(typeof(CeilingType));
-
             foreach (CeilingType ceilingType in collector)
             {
                 if (ceilingType.IsValidObject)
@@ -91,7 +86,6 @@ namespace My_Revit_Commands
         {
             FilteredElementCollector collector = new FilteredElementCollector(doc);
             collector.OfClass(typeof(CeilingType));
-
             foreach (CeilingType ceilingType in collector)
             {
                 if (ceilingType.IsValidObject && ceilingType.Name == ceilingTypeName)
@@ -99,33 +93,25 @@ namespace My_Revit_Commands
                     return ceilingType;
                 }
             }
-
             return null;
-        }
+        } 
 
         private List<Room> GetAllRooms(Document doc)
         {
             List<Room> rooms = new List<Room>();
-
             Autodesk.Revit.DB.View view = doc.ActiveView;
-
             FilteredElementCollector collector = new FilteredElementCollector(doc, view.Id);
             ICollection<Element> elements = collector.OfClass(typeof(SpatialElement)).ToElements();
-
             IEnumerable<Room> roomElements = elements.Where(elem => elem is Room).Cast<Room>();
-
             rooms.AddRange(roomElements);
-
             return rooms;
         }
 
         private List<FloorType> GetFloorTypes(Document doc)
         {
             List<FloorType> floorTypes = new List<FloorType>();
-
             FilteredElementCollector collector = new FilteredElementCollector(doc);
             collector.OfClass(typeof(FloorType));
-
             foreach (FloorType floorType in collector)
             {
                 if (floorType.IsValidObject)
@@ -133,14 +119,12 @@ namespace My_Revit_Commands
                     floorTypes.Add(floorType);
                 }
             }
-
             return floorTypes;
         }
 
         private List<Level> GetLevels(Document doc)
         {
             List<Level> levels = new List<Level>();
-
             FilteredElementCollector collector = new FilteredElementCollector(doc);
             ICollection<Element> elements = collector.OfClass(typeof(Level)).ToElements();
 
@@ -152,7 +136,6 @@ namespace My_Revit_Commands
                     levels.Add(level);
                 }
             }
-
             return levels;
         }
 
@@ -167,14 +150,25 @@ namespace My_Revit_Commands
                 comboBox2.Items.Add(level.Name);
             }
         }
-        
+
         private void numericUpDown1_ValueChanged(object sender, EventArgs e)
         {
-            floorOffset = (double)numericUpDown1.Value;
-            currentOffset = (decimal)floorOffset;
+            currentOffset = numericUpDown1.Value;
+
+            numericUpDown1.Text = currentOffset.ToString("+#.0;-#.0;0.0");
+
             UpdateNumericUpDownIncrement();
         }
 
+        private void numericUpDown2_ValueChanged(object sender, EventArgs e)
+        {
+            currentOffset = numericUpDown2.Value;
+
+           
+            numericUpDown2.Text = currentOffset.ToString("+#.0;-#.0;0.0");
+
+            UpdateNumericUpDownIncrement();
+        }
         private void UpdateNumericUpDownIncrement()
         {
             numericUpDown1.Increment = offsetIncrement;
@@ -185,15 +179,17 @@ namespace My_Revit_Commands
         {
             numericUpDown1.DecimalPlaces = 1;
             numericUpDown1.Increment = 0.1m;
+            numericUpDown1.Minimum = -100m;
+            numericUpDown1.Maximum = 100m; 
+            numericUpDown1.ThousandsSeparator = false;
+            numericUpDown1.Text = currentOffset.ToString("+#.0;-#.0;0.0");
+
             numericUpDown2.DecimalPlaces = 1;
             numericUpDown2.Increment = 0.1m;
-        }
-
-        private void numericUpDown2_ValueChanged(object sender, EventArgs e)
-        {
-            offsetIncrement = numericUpDown2.Increment;
-            currentOffset = (decimal)floorOffset;
-            UpdateNumericUpDownIncrement();
+            numericUpDown2.Minimum = -100m; 
+            numericUpDown2.Maximum = 100m; 
+            numericUpDown2.ThousandsSeparator = false;
+            numericUpDown2.Text = currentOffset.ToString("+#.0;-#.0;0.0");
         }
 
         private void button1_Click_1(object sender, EventArgs e)
@@ -210,7 +206,7 @@ namespace My_Revit_Commands
                     if (trans.Start() == TransactionStatus.Started)
                     {
                         Level selectedLevel = Levels.FirstOrDefault(level => level.Name == comboBox1.SelectedItem.ToString());
-                        double offset = -(double)numericUpDown1.Value; // Aplicar el signo negativo al offset
+                        double floorOffset = (double)numericUpDown1.Value; // Obtener el valor del NumericUpDown1 directamente
                         int createdFloorCount = 0;
 
                         foreach (object selectedItem in listBox1.SelectedItems)
@@ -229,16 +225,25 @@ namespace My_Revit_Commands
                                     foreach (BoundarySegment segment in segmentList)
                                     {
                                         Curve curve = segment.GetCurve();
-                                        XYZ offsetVector = new XYZ(0, 0, offset);
-                                        Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
-                                        curveLoop.Append(offsetCurve);
+                                        curveLoop.Append(curve);
                                     }
                                     curveLoops.Add(curveLoop);
                                 }
 
-                                Floor floor = Floor.Create(doc, curveLoops, floorType.Id, selectedLevel.Id, false, null, 0);
+                                Floor floor = Floor.Create(doc, curveLoops, floorType.Id, selectedLevel.Id, false, null, 0.0); // Añadimos el valor predeterminado 0.0 para el parámetro 'slope'
                                 if (floor != null)
+                                {
+                                    // Obtener la elevación actual del piso
+                                    double currentElevation = floor.get_Parameter(BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM).AsDouble();
+
+                                    // Calcular la nueva elevación aplicando el desplazamiento
+                                    double newElevation = selectedLevel.Elevation + floorOffset;
+
+                                    // Mover el piso a la nueva elevación
+                                    ElementTransformUtils.MoveElement(doc, floor.Id, new XYZ(0, 0, newElevation - currentElevation));
+
                                     createdFloorCount++;
+                                }
                             }
                         }
 
@@ -267,8 +272,9 @@ namespace My_Revit_Commands
                     if (trans.Start() == TransactionStatus.Started)
                     {
                         Level selectedLevel = Levels.FirstOrDefault(level => level.Name == comboBox2.SelectedItem.ToString());
-                        double floorOffset = -(double)numericUpDown1.Value; // Offset del piso (se usa como base)
-                        double ceilingOffset = -(double)numericUpDown2.Value; // Offset del techo
+                        double offsetFromLevel = selectedLevel.Elevation;
+                        double ceilingOffset = (double)numericUpDown2.Value; // Obtener el valor del NumericUpDown2 directamente
+
                         int createdCeilingCount = 0;
 
                         foreach (object selectedItem in listBox1.SelectedItems)
@@ -286,23 +292,26 @@ namespace My_Revit_Commands
                                     foreach (BoundarySegment segment in segmentList)
                                     {
                                         Curve curve = segment.GetCurve();
-                                        XYZ floorOffsetVector = new XYZ(0, 0, floorOffset);
-                                        Curve floorOffsetCurve = curve.CreateTransformed(Transform.CreateTranslation(floorOffsetVector));
-                                        profile.Append(floorOffsetCurve);
+                                        XYZ offsetVector = new XYZ(0, 0, ceilingOffset);
+                                        Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(offsetVector));
+                                        profile.Append(offsetCurve);
                                     }
                                 }
 
-                                CurveLoop offsetProfile = new CurveLoop();
-                                foreach (Curve curve in profile)
-                                {
-                                    XYZ ceilingOffsetVector = new XYZ(0, 0, ceilingOffset);
-                                    Curve offsetCurve = curve.CreateTransformed(Transform.CreateTranslation(ceilingOffsetVector));
-                                    offsetProfile.Append(offsetCurve);
-                                }
-
-                                Ceiling ceiling = Ceiling.Create(doc, new List<CurveLoop> { offsetProfile }, ceilingType.Id, selectedLevel.Id, null, 0.0);
+                                Ceiling ceiling = Ceiling.Create(doc, new List<CurveLoop> { profile }.Cast<CurveLoop>().ToList(), ceilingType.Id, selectedLevel.Id, null, 0.0);
                                 if (ceiling != null)
+                                {
+                                    // Obtener el parámetro "Height Offset From Level" del techo
+                                    Parameter offsetParam = ceiling.get_Parameter(BuiltInParameter.CEILING_HEIGHTABOVELEVEL_PARAM);
+
+                                    // Verificar si el parámetro es válido y ajustar su valor
+                                    if (offsetParam != null && offsetParam.StorageType == StorageType.Double)
+                                    {
+                                        offsetParam.Set(ceilingOffset);
+                                    }
+
                                     createdCeilingCount++;
+                                }
                             }
                         }
 
@@ -315,11 +324,6 @@ namespace My_Revit_Commands
             {
                 MessageBox.Show("You must select at least one Room, one Level, and one Ceiling Type.");
             }
-        }
-
-        private void comboBox4_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
         }
     }
 
